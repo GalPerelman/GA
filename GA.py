@@ -14,6 +14,9 @@ class GA:
         self.chromosome_type = chromosome_type
         self.population_saphe = (sols_in_population,single_sol_shape)
         self.sol_values = []
+        self.best_sol = np.zeros(single_sol_shape)
+        self.best_sol_value = 0
+
 
     def init_pop(self):
         if self.chromosome_type == int:
@@ -21,13 +24,23 @@ class GA:
         if self.chromosome_type == float:
             return np.random.uniform(low=self.lower, high=self.upper, size=self.population_saphe)
 
-    def fitness(self, population):
-        fitness_dict = {i:self.objective_func(population[i]) for i in range(self.sols_in_generation)}
-        min_sol = min(fitness_dict.values())
+    def init_best_sol_value(self,population,*args):
+        ''' insert random value for the best values variable'''
+        self.best_sol_value = self.objective_func(population[0],*args)
+        if self.best_sol_value != None:
+            return self.best_sol_value
+        else:
+            self.init_best_sol_value(population,*args)
+
+    def fitness(self, population,*args):
+        fitness_dict = {i:self.objective_func(population[i],*args) for i in range(self.sols_in_generation)}
+        min_idx, min_sol = min(fitness_dict.items(), key=lambda x: x[1])
         max_sol = max(fitness_dict.values())
         avg_pop_sol = sum(fitness_dict.values())/len(fitness_dict)
         self.sol_values.append(min_sol)
-        print(min_sol)
+        if min_sol < self.best_sol_value:
+            self.best_sol_value = min_sol
+            self.best_x = population[min_idx]
         return fitness_dict
 
     def choose_parents(self, fitness_dict, population):
@@ -59,12 +72,21 @@ class GA:
         single_offspring[mutate_idx] = random_value
         return single_offspring
 
-    def new_population(self,parents_dict, offsprings):
+    def new_population(self,parents_dict, offsprings, mutation_rate=1):
         parents = np.array(list(parents_dict.values()), dtype=self.chromosome_type)
         new_population = parents
-
         for o in offsprings:
-            o = self.mutate_offspring(o)
+            for i in range(mutation_rate):
+                o = self.mutate_offspring(o)
             new_population = np.vstack((new_population,o))
-
         return new_population
+
+    def optimize(self,n_generations,mutation_rate,*args):
+        new_population = self.init_pop()
+        self.best_sol_value = self.init_best_sol_value(new_population,*args)
+        for i in range(n_generations):
+            fitness_dict = self.fitness(new_population,*args)
+            parent_dict = self.choose_parents(fitness_dict, new_population)
+            offsprings = self.crossover(parent_dict, 0.5)
+            new_population = self.new_population(parent_dict, offsprings, mutation_rate)
+        return self.sol_values
