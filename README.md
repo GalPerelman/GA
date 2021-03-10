@@ -1,5 +1,5 @@
 # GA
-Simple framework for optimization using genetic algorithm\  
+Simple framework for optimization using genetic algorithm\
 Attached example of [Ackley function](https://en.wikipedia.org/wiki/Ackley_function) optimiztion\
 Search range is between -5 and 5\
 argmin = (0,0)\
